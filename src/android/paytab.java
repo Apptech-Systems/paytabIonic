@@ -1,6 +1,5 @@
 package cordova.plugin.paytab;
 
-
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,105 +10,144 @@ import android.content.SharedPreferences;
 import java.util.HashMap;
 import java.util.Map;
 import android.util.Log;
-import paytabs.project.PayTabActivity;
 import java.util.Locale;
 import android.util.DisplayMetrics;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import java.text.DecimalFormat;
+
+
+import com.paytabs.paytabs_sdk.payment.ui.activities.PayTabActivity;
+import com.paytabs.paytabs_sdk.utils.PaymentParams;
 
 public class paytab extends CordovaPlugin {
 
-    CallbackContext callback;
+  CallbackContext callback;
 
-    @Override
-    public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
-        this.callback = callbackContext;
-        if (action.equals("add")) {
+  @Override
+  public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
+    this.callback = callbackContext;
+    if (action.equals("add")) {
 
-            JSONObject args = data.getJSONObject(0);
+      JSONObject args = data.getJSONObject(0);
 
-            Log.i("Card Data: ", args.toString());
+      Log.i("Card Data: ", args.toString());
 
-            Log.d("Language: ",args.getString("language"));
+      Log.d("Language: ",args.getString("language"));
 
-            String lang = "ar";
+      String lang = "ar";
 
-            if (args.getString("language").equalsIgnoreCase("English")) {
-                 lang = "en";
-            } else {
-                 lang = "ar";
-            }
+      if (args.getString("language").equalsIgnoreCase("English")) {
+        lang = "en";
+      } else {
+        lang = "ar";
+      }
 
-            Locale myLocale = new Locale(lang);
-            Resources res = cordova.getActivity().getResources();
-            DisplayMetrics dm = res.getDisplayMetrics();
-            Configuration conf = res.getConfiguration();
-            conf.locale = myLocale;
-            res.updateConfiguration(conf, dm);
+      Locale myLocale = new Locale(lang);
+      Resources res = cordova.getActivity().getResources();
+      DisplayMetrics dm = res.getDisplayMetrics();
+      Configuration conf = res.getConfiguration();
+      conf.locale = myLocale;
+      res.updateConfiguration(conf, dm);
 
-            Intent PayTabs = new Intent(this.cordova.getActivity(), PayTabActivity.class);
+      double aDouble = Double.parseDouble(args.getString("amount"));
 
-            PayTabs.putExtra("pt_merchant_email", "kunwar.adeel@gmail.com");
-            PayTabs.putExtra("pt_secret_key","F6oUQA0OMANTdh6MFNYiLbGRihq19HFPO3JFEJtqkgkxxrjceiv0ubSNsiPC0urOyatcUXCedXLLp5YDotETEwG7PvJP0bEym8Kh");
-            PayTabs.putExtra("pt_transaction_title", args.getString("transactionTitle"));
-            PayTabs.putExtra("pt_amount", args.getString("amount"));
-            PayTabs.putExtra("pt_currency_code", "SAR");
-            PayTabs.putExtra("pt_shared_prefs_name", "myapp_shared");
-            PayTabs.putExtra("pt_customer_email", args.getString("customer_email"));
-            PayTabs.putExtra("pt_customer_phone_number", args.getString("customer_phone_number"));
-            PayTabs.putExtra("pt_order_id", args.getString("order_id"));
-            PayTabs.putExtra("pt_product_name", args.getString("product_name"));
-            PayTabs.putExtra("pt_timeout_in_seconds", "100");
-            PayTabs.putExtra("pt_address_billing", args.getString("address_billing"));
-            PayTabs.putExtra("pt_city_billing", args.getString("city_billing"));
-            PayTabs.putExtra("pt_state_billing", args.getString("state_billing"));
-            PayTabs.putExtra("pt_country_billing", "SAU");
-            PayTabs.putExtra("pt_postal_code_billing", args.getString("postal_code_billing"));
-            PayTabs.putExtra("pt_address_shipping", args.getString("address_shipping"));
-            PayTabs.putExtra("pt_city_shipping", args.getString("city_shipping"));
-            PayTabs.putExtra("pt_state_shipping", args.getString("state_shipping"));
-            PayTabs.putExtra("pt_country_shipping", "SAU");
-            PayTabs.putExtra("pt_postal_code_shipping", args.   getString("postal_code_shipping"));
+      Intent in = new Intent(this.cordova.getActivity(), PayTabActivity.class);
+      in.putExtra(PaymentParams.MERCHANT_EMAIL, args.getString("merchantEmail"));
+      in.putExtra(PaymentParams.SECRET_KEY,args.getString("secretKey"));
+      in.putExtra(PaymentParams.LANGUAGE,lang);
+      in.putExtra(PaymentParams.TRANSACTION_TITLE, args.getString("transactionTitle"));
+      in.putExtra(PaymentParams.AMOUNT, aDouble);
 
-            cordova.startActivityForResult((CordovaPlugin) this, PayTabs, 0);
+      in.putExtra(PaymentParams.CURRENCY_CODE, args.getString("currency"));
+      in.putExtra(PaymentParams.CUSTOMER_PHONE_NUMBER, args.getString("customer_phone_number"));
+      in.putExtra(PaymentParams.CUSTOMER_EMAIL, args.getString("customer_email"));
+      in.putExtra(PaymentParams.ORDER_ID, args.getString("order_id"));
+      in.putExtra(PaymentParams.PRODUCT_NAME, args.getString("product_name"));
 
-        }
+      //Billing Address
+      in.putExtra(PaymentParams.ADDRESS_BILLING,  args.getString("address_billing"));
+      in.putExtra(PaymentParams.CITY_BILLING,  args.getString("city_billing"));
+      in.putExtra(PaymentParams.STATE_BILLING,  args.getString("state_billing"));
+      in.putExtra(PaymentParams.COUNTRY_BILLING,  args.getString("country_shipping"));
+      in.putExtra(PaymentParams.POSTAL_CODE_BILLING,  args.getString("postal_code_billing")); //Put Country Phone code if Postal code not available '00973'
 
-        return true;
+      //Shipping Address
+      in.putExtra(PaymentParams.ADDRESS_SHIPPING,  args.getString("address_billing"));
+      in.putExtra(PaymentParams.CITY_SHIPPING,  args.getString("city_billing"));
+      in.putExtra(PaymentParams.STATE_SHIPPING,  args.getString("state_billing"));
+      in.putExtra(PaymentParams.COUNTRY_SHIPPING,  args.getString("country_shipping"));
+      in.putExtra(PaymentParams.POSTAL_CODE_SHIPPING,  args.getString("postal_code_billing")); //Put Country Phone code if Postal code not available '00973'
+
+      //Payment Page Style
+      in.putExtra(PaymentParams.PAY_BUTTON_COLOR, "#2474bc");
+
+      cordova.startActivityForResult((CordovaPlugin) this, in, 0);
     }
 
-    private boolean getResult(CallbackContext callbackContext) throws JSONException {
-        SharedPreferences shared_prefs = cordova.getActivity().getApplicationContext().getSharedPreferences("myapp_shared", Context.MODE_PRIVATE);
-        String pt_response_code = shared_prefs.getString("pt_response_code", "");
-        String pt_transaction_id = shared_prefs.getString("pt_transaction_id", "");
+    return true;
+  }
 
-        Log.d("Response Code: ",pt_response_code);
+  private boolean getResult(CallbackContext callbackContext) throws JSONException {
+    SharedPreferences shared_prefs = cordova.getActivity().getApplicationContext().getSharedPreferences("myapp_shared", Context.MODE_PRIVATE);
 
-        Map<String,String> object = new HashMap<String,String>();
-        object.put("response_code", pt_response_code);
-        object.put("transaction_id", pt_transaction_id);
+    String pt_response_code = shared_prefs.getString(PaymentParams.RESPONSE_CODE,"");
+    String pt_transaction_id = shared_prefs.getString(PaymentParams.TRANSACTION_ID, "");
+    Log.d("Response Code: ",pt_response_code);
+    Map<String,String> object = new HashMap<String,String>();
+    object.put("response_code", pt_response_code);
+    object.put("transaction_id", pt_transaction_id);
 
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
-        return true;
+    callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
+    return true;
+  }
+
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    int RESULT_OK = 0;
+
+    if (resultCode == RESULT_OK && requestCode == PaymentParams.PAYMENT_REQUEST_CODE) {
+      if (data.hasExtra(PaymentParams.TOKEN) && !data.getStringExtra(PaymentParams.TOKEN).isEmpty()) {
+        Log.e("Tag", data.getStringExtra(PaymentParams.TOKEN));
+        Log.e("Tag", data.getStringExtra(PaymentParams.CUSTOMER_EMAIL));
+        Log.e("Tag", data.getStringExtra(PaymentParams.CUSTOMER_PASSWORD));
+      }
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.println(requestCode,"Hello","Hello");
-        Log.println(resultCode,"Hello","Hello");
-        SharedPreferences shared_prefs = cordova.getActivity().getApplicationContext().getSharedPreferences("myapp_shared", Context.MODE_PRIVATE);
-            String pt_response_code = shared_prefs.getString("pt_response_code", "");
-            String pt_transaction_id = shared_prefs.getString("pt_transaction_id", "");
-
-        Log.d("Response Code: ",pt_response_code);
-        Log.d("Response Code: ",pt_transaction_id);
-
-        Map<String,String> object = new HashMap<String,String>();
-        object.put("response_code", pt_response_code);
-        object.put("transaction_id", pt_transaction_id);
-
-        this.callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
-
+    String pt_response_code ="0";
+    String pt_transaction_id = "0";
+    try
+    {
+      pt_response_code = data.getStringExtra(PaymentParams.RESPONSE_CODE);
+      pt_transaction_id = data.getStringExtra(PaymentParams.TRANSACTION_ID);
+      //hesaplanmak istenen ifade
     }
+    catch(Exception ex)
+    {
+      //Bir hata türü tespit edilince verilmesi gereken mesaj
+    }
+
+    Map<String,String> object = new HashMap<String,String>();
+    object.put("response_code", pt_response_code);
+    object.put("transaction_id", pt_transaction_id);
+    this.callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
+//
+//        Log.println(requestCode,"Hello","Hello");
+//        Log.println(resultCode,"Hello","Hello");
+//        SharedPreferences shared_prefs = cordova.getActivity().getApplicationContext().getSharedPreferences("myapp_shared", Context.MODE_PRIVATE);
+//            String pt_response_code = shared_prefs.getString("pt_response_code", "");
+//            String pt_transaction_id = shared_prefs.getString("pt_transaction_id", "");
+//
+//        Log.d("Response Code: ",pt_response_code);
+//        Log.d("Response Code: ",pt_transaction_id);
+//
+//        Map<String,String> object = new HashMap<String,String>();
+//        object.put("response_code", pt_response_code);
+//        object.put("transaction_id", pt_transaction_id);
+//
+//        this.callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
+
+  }
 
 }
